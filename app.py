@@ -1,7 +1,10 @@
 import sys
-import aiohttp
 import asyncio
 import logging
+
+import aiohttp
+from aiohttp.web import HTTPException
+from ebooklib.epub import EpubBook
 
 from src.parse import parse
 
@@ -9,15 +12,28 @@ from src.parse import parse
 BASE_URL = "https://ranobehub.org/ranobe/"
 
 
-async def make_tome(link, session):
+async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
+    # TODO: make chapters' epub pages
+    # TODO: glue epub pages
+    # TODO: divide into chapters
+
+    try:
+        (await ping(link + "0", session)).raise_for_status()
+        offset = 0
+    except:
+        offset = 1
+
+
+    return EpubBook()
+
+
+
+async def make_chapter(link: str, session: aiohttp.ClientSession):
+    # TODO: parse illustrations
     pass
 
 
-async def make_chapter(link, session):
-    pass
-
-
-async def ping(link, session: aiohttp.ClientSession):
+async def ping(link, session: aiohttp.ClientSession) -> aiohttp.ClientResponse:
     async with session.get(link) as resp:
         return resp
 
@@ -27,22 +43,22 @@ async def main(ranobe_id: str):
     async with aiohttp.ClientSession() as session:
         tasks = []
         count = 1
+        resp = await ping(ranobe_link + str(count) + "/1", session)
 
-        while (resp := await ping(ranobe_link + str(count) + "/1", session)).status != 404:
-            tome_link = ranobe_link + str(count) + "/" 
-            count += 1
-            if 300 < resp.status < 500:
-                logging.warning(f" {tome_link} - {resp.status}: {resp.reason}")
-                exit(2)
-                
-            tasks.append(make_tome(tome_link, session))
-            print(tome_link)
-
-        if not tasks:
-            logging.error("Сервер недоступен")
-            exit(3)
-
-        await asyncio.gather(*tasks)
+        try:
+            while resp.status != 404:
+                resp.raise_for_status()
+                tome_link = ranobe_link + str(count) + "/" 
+                count += 1
+                tasks.append(make_tome(tome_link, session))
+                resp = await ping(ranobe_link + str(count) + "/1", session)
+        except HTTPException as e:
+            logging.error(str(e))
+            exit(2)
+        
+        tomes = await asyncio.gather(*tasks)
+        for tome in tomes:
+            ...
 
 
 if __name__ == "__main__":
