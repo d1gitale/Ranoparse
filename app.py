@@ -23,6 +23,20 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
     except:
         offset = 1
 
+    cur_chapter_link = link + str(offset)
+    resp = await ping(cur_chapter_link, session)
+    chapters = []
+    try:
+        while resp.status != 404:
+            resp.raise_for_status()
+            cur_chapter = await make_chapter(cur_chapter_link, session)
+            chapters.append(cur_chapter)
+            print(cur_chapter_link)
+            offset += 1
+            cur_chapter_link = link + str(offset)
+            resp = await ping(cur_chapter_link, session)
+    except HTTPException as e:
+        logging.error(e)
 
     return EpubBook()
 
