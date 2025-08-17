@@ -4,52 +4,11 @@ import logging
 
 import aiohttp
 from aiohttp.web import HTTPException
-from ebooklib.epub import EpubBook
 
-from src.parse import parse
+from src.helpers import ping, make_tome
 
 
 BASE_URL = "https://ranobehub.org/ranobe/"
-
-
-async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
-    # TODO: make chapters' epub pages
-    # TODO: glue epub pages
-    # TODO: divide into chapters
-
-    try:
-        (await ping(link + "0", session)).raise_for_status()
-        offset = 0
-    except:
-        offset = 1
-
-    cur_chapter_link = link + str(offset)
-    resp = await ping(cur_chapter_link, session)
-    chapters = []
-    try:
-        while resp.status != 404:
-            resp.raise_for_status()
-            cur_chapter = await make_chapter(cur_chapter_link, session)
-            chapters.append(cur_chapter)
-            print(cur_chapter_link)
-            offset += 1
-            cur_chapter_link = link + str(offset)
-            resp = await ping(cur_chapter_link, session)
-    except HTTPException as e:
-        logging.error(e)
-
-    return EpubBook()
-
-
-
-async def make_chapter(link: str, session: aiohttp.ClientSession):
-    # TODO: parse illustrations
-    pass
-
-
-async def ping(link, session: aiohttp.ClientSession) -> aiohttp.ClientResponse:
-    async with session.get(link) as resp:
-        return resp
 
 
 async def main(ranobe_id: str):
