@@ -8,4 +8,5 @@ dependencies = [
     "aiohttp>=3.12.15",
     "beautifulsoup4>=4.13.4",
     "ebooklib>=0.19",
+    "tqdm>=4.67.1",
 ]

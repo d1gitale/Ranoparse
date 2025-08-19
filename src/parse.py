@@ -8,7 +8,12 @@ async def parse_chapter(link: str, session: aiohttp.ClientSession):
 
 
 async def parse_chapter_title(link: str, session: aiohttp.ClientSession):
-    pass
+    async with session.get(link) as resp:
+        soup = BeautifulSoup(await resp.text(), "lxml")
+        title = soup.find("h1", class_="header")
+        if title is None:
+            return "None"
+        return title.text
 
 
 async def parse_tome_title(link: str, session: aiohttp.ClientSession):

@@ -3,6 +3,7 @@ import asyncio
 import logging
 
 import aiohttp
+from tqdm.asyncio import tqdm_asyncio
 from aiohttp.web import HTTPException
 
 from src.helpers import ping, make_tome
@@ -29,7 +30,13 @@ async def main(ranobe_id: str):
             logging.error(str(e))
             exit(2)
         
-        tomes = await asyncio.gather(*tasks)
+        tomes = await tqdm_asyncio.gather(
+            *tasks, 
+            desc="Создание томов📚",
+            position=0,
+            ascii=" ░▒▓█",
+            bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt}"
+        )
         for tome in tomes:
             ...
 

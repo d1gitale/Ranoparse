@@ -1,7 +1,9 @@
 import logging
+import asyncio
 
 import aiohttp
 from aiohttp.web import HTTPException
+from tqdm.asyncio import tqdm_asyncio
 from ebooklib.epub import EpubBook
 
 from src.parse import *
@@ -19,17 +21,27 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
 
     cur_chapter_link = link + str(offset)
     resp = await ping(cur_chapter_link, session)
-    chapters = []
+    tasks = []
     try:
         while resp.status != 404:
             resp.raise_for_status()
-            cur_chapter = await make_chapter(cur_chapter_link, session)
-            chapters.append(cur_chapter)
+            cur_chapter = make_chapter(cur_chapter_link, session)
+            tasks.append(cur_chapter)
             offset += 1
             cur_chapter_link = link + str(offset)
             resp = await ping(cur_chapter_link, session)
     except HTTPException as e:
         logging.error(e)
+    
+    tome_num = int(link.split("/")[-2])
+    chapters = await tqdm_asyncio.gather(
+        *tasks, 
+        desc=f"Том №{tome_num}📖",
+        leave=False,
+        position=tome_num,
+        ascii=" ░▒▓█",
+        bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt}"
+    )
 
     tome_title = await parse_tome_title(link + str(offset-1), session)
 
