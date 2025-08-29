@@ -14,6 +14,6 @@ if not os.path.isdir(str(dir_path)):
     logging.error("Убедитесь, что директория существует")
     exit(2)
 
-with open("config.txt", "w") as f:
+with open("env.txt", "w") as f:
     f.write(str(dir_path))
     

@@ -5,8 +5,10 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiofiles>=24.1.0",
     "aiohttp>=3.12.15",
     "beautifulsoup4>=4.13.4",
     "ebooklib>=0.19",
+    "pillow>=11.3.0",
     "tqdm>=4.67.1",
 ]

@@ -1,12 +1,16 @@
 import sys
+import os
+import shutil
 import asyncio
 import logging
 
 import aiohttp
 from tqdm.asyncio import tqdm_asyncio
 from aiohttp.web import HTTPException
+from ebooklib.epub import EpubBook, write_epub
 
-from src.helpers import ping, make_tome
+from src.helpers import ping, make_tome, IMAGES_SAVE_PATH
+from src.parse import parse_ranobe_title
 
 
 BASE_URL = "https://ranobehub.org/ranobe/"
@@ -29,16 +33,27 @@ async def main(ranobe_id: str):
         except HTTPException as e:
             logging.error(str(e))
             exit(2)
-        
-        tomes = await tqdm_asyncio.gather(
+
+        if not os.path.exists(IMAGES_SAVE_PATH):
+            os.mkdir(IMAGES_SAVE_PATH)
+
+        tomes: list[EpubBook] = await tqdm_asyncio.gather(
             *tasks, 
             desc="Создание томов📚",
             position=0,
             ascii=" ░▒▓█",
             bar_format="{desc}: {percentage:3.0f}%|{bar}| {n_fmt}/{total_fmt}"
         )
+        ranobe_title = await parse_ranobe_title(ranobe_link, session)
+        save_path = f"{open("env.txt").read()}/{ranobe_title}"
+
+        if not os.path.exists(save_path):
+            os.mkdir(save_path)
+
         for tome in tomes:
-            ...
+            write_epub(f"{save_path}/{tome.title}.epub", tome)
+
+        shutil.rmtree(IMAGES_SAVE_PATH)
 
 
 if __name__ == "__main__":
