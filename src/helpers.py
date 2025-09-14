@@ -3,7 +3,7 @@ import aiofiles
 
 import aiohttp
 from aiohttp.web import HTTPException
-from ebooklib.epub import EpubBook, EpubHtml, EpubImage, EpubNav, EpubNcx
+from ebooklib.epub import EpubBook, EpubHtml, EpubImage, EpubNcx
 from tqdm.asyncio import tqdm_asyncio
 
 from src.parse import *
@@ -56,11 +56,6 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
         tome_epub.spine.append(chapter) # type: ignore
 
     tome_epub.add_item(EpubNcx(uid='ncx', file_name='toc.ncx'))
-    # tome_epub.add_item(EpubNav(uid='nav', file_name='nav.xhtml', media_type='application/xhtml+xml', title=''))
-
-    # print(list(tome_epub.get_items()))
-    # print([item.content for item in tome_epub.get_items()][-2:])
-    # exit()
 
     return tome_epub
 
