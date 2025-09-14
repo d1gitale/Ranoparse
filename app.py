@@ -53,8 +53,6 @@ async def main(ranobe_id: str):
         for tome in tomes:
             write_epub(f"{save_path}/{tome.title}.epub", tome)
 
-        shutil.rmtree(IMAGES_SAVE_PATH)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -68,4 +66,7 @@ if __name__ == "__main__":
             break
         ranobe_id += char
     
-    asyncio.run(main(ranobe_id))
+    try:
+        asyncio.run(main(ranobe_id))
+    finally:
+        shutil.rmtree(IMAGES_SAVE_PATH)

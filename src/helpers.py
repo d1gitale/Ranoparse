@@ -20,7 +20,7 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
     resp = await ping(cur_chapter_link, session)
     tasks = []
     tome_epub = EpubBook()
-    tome_epub.spine = ["nav"]
+    tome_epub.spine = ["ncx"]
 
     try:
         while resp.status != 404:
@@ -55,8 +55,12 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
         tome_epub.toc.append(chapter)
         tome_epub.spine.append(chapter) # type: ignore
 
-    tome_epub.add_item(EpubNcx())
-    tome_epub.add_item(EpubNav())
+    tome_epub.add_item(EpubNcx(uid='ncx', file_name='toc.ncx'))
+    # tome_epub.add_item(EpubNav(uid='nav', file_name='nav.xhtml', media_type='application/xhtml+xml', title=''))
+
+    # print(list(tome_epub.get_items()))
+    # print([item.content for item in tome_epub.get_items()][-2:])
+    # exit()
 
     return tome_epub
 
