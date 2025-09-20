@@ -5,9 +5,9 @@ import asyncio
 import logging
 
 import aiohttp
+import pypub
 from tqdm.asyncio import tqdm_asyncio
 from aiohttp.web import HTTPException
-from ebooklib.epub import EpubBook, write_epub
 
 from src.helpers import ping, make_tome, IMAGES_SAVE_PATH
 from src.parse import parse_ranobe_title
@@ -37,7 +37,7 @@ async def main(ranobe_id: str):
         if not os.path.exists(IMAGES_SAVE_PATH):
             os.mkdir(IMAGES_SAVE_PATH)
 
-        tomes: list[EpubBook] = await tqdm_asyncio.gather(
+        tomes: list[pypub.Epub] = await tqdm_asyncio.gather(
             *tasks, 
             desc="Создание томов📚",
             position=0,
@@ -51,7 +51,7 @@ async def main(ranobe_id: str):
             os.mkdir(save_path)
 
         for tome in tomes:
-            write_epub(f"{save_path}/{tome.title}.epub", tome)
+            tome.create(f"{save_path}/{tome.title}.epub")
 
 
 if __name__ == "__main__":

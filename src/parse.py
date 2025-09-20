@@ -13,14 +13,13 @@ IMAGES_SAVE_PATH = "images/"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
 
 
-async def parse_chapter(link: str, session: aiohttp.ClientSession) -> tuple[str, list[str]]:
+async def parse_chapter(link: str, session: aiohttp.ClientSession) -> str:
     async with session.get(link) as resp:
         soup = BeautifulSoup(await resp.text(), "lxml")
         content = soup.select(
             "div.ui.text.container[data-container] > *", 
         )
         chapter_content = ""
-        image_ids = []
         for child in content:
             if child.name == "p":
                 if (img := child.find("img")) is not None:
@@ -28,14 +27,13 @@ async def parse_chapter(link: str, session: aiohttp.ClientSession) -> tuple[str,
                     await download_image(session, API_ROUTE + img_id, IMAGES_SAVE_PATH + img_id + ".jpg")
                     img["src"] = IMAGES_SAVE_PATH + img_id + ".jpg" # type: ignore
                     del img["data-media-id"] # type: ignore
-                    image_ids.append(img_id)
                     chapter_content += str(img).strip()
                 else:
                     chapter_content += str(child).strip()
             elif child.name == "h3":
                 chapter_content += str(child).strip()
 
-        return chapter_content, image_ids
+        return chapter_content
 
 
 async def parse_chapter_title(link: str, session: aiohttp.ClientSession) -> str:

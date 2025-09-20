@@ -1,15 +1,14 @@
 import logging
-import aiofiles
 
 import aiohttp
+import pypub
 from aiohttp.web import HTTPException
-from ebooklib.epub import EpubBook, EpubHtml, EpubImage, EpubNcx
 from tqdm.asyncio import tqdm_asyncio
 
 from src.parse import *
 
 
-async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
+async def make_tome(link: str, session: aiohttp.ClientSession) -> pypub.Epub:
     try:
         (await ping(link + "0", session)).raise_for_status()
         offset = 0
@@ -19,13 +18,17 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
     cur_chapter_link = link + str(offset)
     resp = await ping(cur_chapter_link, session)
     tasks = []
-    tome_epub = EpubBook()
-    tome_epub.spine = ["ncx"]
+
+    tome_title = await parse_tome_title(link + str(offset), session)
+    tome_epub = pypub.Epub(
+        title=tome_title,
+        language="ru",
+        )
 
     try:
         while resp.status != 404:
             resp.raise_for_status()
-            cur_chapter = make_chapter(tome_epub, cur_chapter_link, session)
+            cur_chapter = make_chapter(cur_chapter_link, session)
             tasks.append(cur_chapter)
             offset += 1
             cur_chapter_link = link + str(offset)
@@ -34,14 +37,8 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
         logging.error(e)
     
     tome_num = int(link.split("/")[-2])
-    tome_title = await parse_tome_title(link + str(offset-1), session)
 
-    tome_epub.set_identifier(str(tome_num))
-    tome_epub.set_title(tome_title)
-    tome_epub.set_language("ru")
-    tome_epub.add_author("Ranoparse")
-
-    chapters: list[EpubHtml] = await tqdm_asyncio.gather(
+    chapters: list[pypub.Chapter] = await tqdm_asyncio.gather(
         *tasks, 
         desc=f"Том №{tome_num}📖",
         leave=False,
@@ -51,34 +48,20 @@ async def make_tome(link: str, session: aiohttp.ClientSession) -> EpubBook:
     ) # type: ignore
     
     for chapter in chapters:
-        tome_epub.add_item(chapter)
-        tome_epub.toc.append(chapter)
-        tome_epub.spine.append(chapter) # type: ignore
-
-    tome_epub.add_item(EpubNcx(uid='ncx', file_name='toc.ncx'))
+        tome_epub.add_chapter(chapter)
 
     return tome_epub
 
 
-async def make_chapter(tome: EpubBook, link: str, session: aiohttp.ClientSession) -> EpubHtml:
-    chapter_text, img_ids = await parse_chapter(link, session)
+async def make_chapter(link: str, session: aiohttp.ClientSession) -> pypub.Chapter:
+    chapter_text = await parse_chapter(link, session)
     chapter_title = await parse_chapter_title(link, session)
 
-    chapter_epub = EpubHtml(
+    chapter_epub = pypub.create_chapter_from_html(
+        html=chapter_text.encode(),
         title=chapter_title,
-        file_name=f"{chapter_title}.html",
-        lang="ru"
+        url="http://localhost:1488/"
     )
-    chapter_epub.set_content(chapter_text)
-
-    for img_id in img_ids:
-        async with aiofiles.open(IMAGES_SAVE_PATH + img_id + ".jpg", "rb") as img:
-            img_item = EpubImage(
-                file_name=IMAGES_SAVE_PATH + img_id + ".jpg",
-                media_type="image/jpeg",
-                content=await img.read()
-            )
-            tome.add_item(img_item)
 
     return chapter_epub
 
