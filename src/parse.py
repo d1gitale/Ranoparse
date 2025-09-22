@@ -32,6 +32,13 @@ async def parse_chapter(link: str, session: aiohttp.ClientSession) -> str:
                     chapter_content += str(child).strip()
             elif child.name == "h3":
                 chapter_content += str(child).strip()
+            elif child.name == "img":
+                img = child
+                img_id: str = img.get("data-media-id") # type: ignore
+                await download_image(session, API_ROUTE + img_id, IMAGES_SAVE_PATH + img_id + ".jpg")
+                img["src"] = IMAGES_SAVE_PATH + img_id + ".jpg" # type: ignore
+                del img["data-media-id"] # type: ignore
+                chapter_content += str(img).strip()
 
         return chapter_content
 

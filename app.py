@@ -59,7 +59,8 @@ if __name__ == "__main__":
         logging.error("Использование: uv run app.py {ссылка на главную страницу ранобэ}")
         exit(1)
 
-    ranobe_url = sys.argv[1]
+    # split for stripping query parameters
+    ranobe_url = sys.argv[1].split("?")[0]
     ranobe_id = ""
     for char in ranobe_url[8:].split("/")[2]:
         if not char.isdigit():
